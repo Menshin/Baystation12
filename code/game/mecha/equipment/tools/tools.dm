@@ -1,11 +1,11 @@
 /obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp
-	name = "Hydraulic Clamp"
+	name = "hydraulic clamp"
 	icon_state = "mecha_clamp"
 	equip_cooldown = 15
 	energy_drain = 10
 	var/dam_force = 20
 	var/obj/mecha/working/ripley/cargo_holder
-	required_type = list(/obj/mecha/working, /obj/mecha/hoverpod) //so that hoverpods are a bit more useful as space transportation
+	required_type = /obj/mecha/working
 
 	attach(obj/mecha/M as obj)
 		..()
@@ -64,13 +64,13 @@
 		return 1
 
 /obj/item/mecha_parts/mecha_equipment/tool/drill
-	name = "Drill"
+	name = "drill"
 	desc = "This is the drill that'll pierce the heavens! (Can be attached to: Combat and Engineering Exosuits)"
 	icon_state = "mecha_drill"
 	equip_cooldown = 30
 	energy_drain = 10
 	force = 15
-	required_type = list(/obj/mecha/working, /obj/mecha/combat)
+	required_type = list(/obj/mecha/working/ripley, /obj/mecha/combat)
 
 	action(atom/target)
 		if(!action_checks(target)) return
@@ -115,7 +115,7 @@
 		return 1
 
 /obj/item/mecha_parts/mecha_equipment/tool/drill/diamonddrill
-	name = "Diamond Drill"
+	name = "diamond drill"
 	desc = "This is an upgraded version of the drill that'll pierce the heavens! (Can be attached to: Combat and Engineering Exosuits)"
 	icon_state = "mecha_diamond_drill"
 	origin_tech = "materials=4;engineering=3"
@@ -166,18 +166,21 @@
 		return 1
 
 /obj/item/mecha_parts/mecha_equipment/tool/extinguisher
-	name = "Extinguisher"
+	name = "extinguisher"
 	desc = "Exosuit-mounted extinguisher (Can be attached to: Engineering exosuits)"
 	icon_state = "mecha_exting"
 	equip_cooldown = 5
 	energy_drain = 0
 	range = MELEE|RANGED
 	required_type = /obj/mecha/working
+	var/spray_particles = 5
+	var/spray_amount = 5	//units of liquid per particle. 5 is enough to wet the floor - it's a big fire extinguisher, so should be fine
+	var/max_water = 1000
 
 	New()
-		reagents = new/datum/reagents(200)
+		reagents = new/datum/reagents(max_water)
 		reagents.my_atom = src
-		reagents.add_reagent("water", 200)
+		reagents.add_reagent("water", max_water)
 		..()
 		return
 
@@ -188,8 +191,8 @@
 		if(do_after_cooldown(target))
 			if(istype(target, /obj/structure/reagent_dispensers/watertank) && get_dist(chassis,target) <= 1)
 				var/obj/o = target
-				o.reagents.trans_to(src, 200)
-				occupant_message("\blue Extinguisher refilled")
+				var/amount = o.reagents.trans_to(src, 200)
+				occupant_message("\blue [amount] units transferred into internal tank.")
 				playsound(chassis, 'sound/effects/refill.ogg', 50, 1, -6)
 			else
 				if(src.reagents.total_volume > 0)
@@ -200,16 +203,17 @@
 					var/turf/T2 = get_step(T,turn(direction, -90))
 
 					var/list/the_targets = list(T,T1,T2)
-					spawn(0)
-						for(var/a=0, a<5, a++)
+					for(var/a=0, a<spray_particles, a++)
+						spawn(0)
 							var/obj/effect/effect/water/W = new /obj/effect/effect/water(get_turf(chassis))
 							if(!W)
 								return
 							var/turf/my_target = pick(the_targets)
-							var/datum/reagents/R = new/datum/reagents(5)
+							var/datum/reagents/R = new/datum/reagents(spray_amount)
 							W.reagents = R
 							R.my_atom = W
-							src.reagents.trans_to(W,1)
+							src.reagents.trans_to(W, spray_amount)
+						
 							for(var/b=0, b<4, b++)
 								if(!W)
 									return
@@ -225,6 +229,7 @@
 								if(W.loc == my_target)
 									break
 								sleep(2)
+							W.delete()
 		return 1
 
 	get_equip_info()
@@ -235,7 +240,7 @@
 
 
 /obj/item/mecha_parts/mecha_equipment/tool/rcd
-	name = "Mounted RCD"
+	name = "mounted RCD"
 	desc = "An exosuit-mounted Rapid Construction Device. (Can be attached to: Any exosuit)"
 	icon_state = "mecha_rcd"
 	origin_tech = "materials=4;bluespace=3;magnets=4;powerstorage=4"
@@ -340,7 +345,7 @@
 
 
 /obj/item/mecha_parts/mecha_equipment/teleporter
-	name = "Teleporter"
+	name = "teleporter"
 	desc = "An exosuit module that allows exosuits to teleport to any position in view."
 	icon_state = "mecha_teleport"
 	origin_tech = "bluespace=10"
@@ -360,7 +365,7 @@
 
 
 /obj/item/mecha_parts/mecha_equipment/wormhole_generator
-	name = "Wormhole Generator"
+	name = "wormhole generator"
 	desc = "An exosuit module that allows generating of small quasi-stable wormholes."
 	icon_state = "mecha_wholegen"
 	origin_tech = "bluespace=3"
@@ -410,7 +415,7 @@
 		return
 
 /obj/item/mecha_parts/mecha_equipment/gravcatapult
-	name = "Gravitational Catapult"
+	name = "gravitational catapult"
 	desc = "An exosuit mounted Gravitational Catapult."
 	icon_state = "mecha_teleport"
 	origin_tech = "bluespace=2;magnets=3"
@@ -486,8 +491,8 @@
 
 
 /obj/item/mecha_parts/mecha_equipment/anticcw_armor_booster //what is that noise? A BAWWW from TK mutants.
-	name = "Armor Booster Module (Close Combat Weaponry)"
-	desc = "Boosts exosuit armor against armed melee attacks. Requires energy to operate."
+	name = "\improper CCW armor booster"
+	desc = "Close-combat armor booster. Boosts exosuit armor against armed melee attacks. Requires energy to operate."
 	icon_state = "mecha_abooster_ccw"
 	origin_tech = "materials=3"
 	equip_cooldown = 10
@@ -536,8 +541,8 @@
 
 
 /obj/item/mecha_parts/mecha_equipment/antiproj_armor_booster
-	name = "Armor Booster Module (Ranged Weaponry)"
-	desc = "Boosts exosuit armor against ranged attacks. Completely blocks taser shots. Requires energy to operate."
+	name = "\improper RW armor booster"
+	desc = "Ranged-weaponry armor booster. Boosts exosuit armor against ranged attacks. Completely blocks taser shots, but requires energy to operate."
 	icon_state = "mecha_abooster_proj"
 	origin_tech = "materials=4"
 	equip_cooldown = 10
@@ -607,8 +612,8 @@
 
 
 /obj/item/mecha_parts/mecha_equipment/repair_droid
-	name = "Repair Droid"
-	desc = "Automated repair droid. Scans exosuit for damage and repairs it. Can fix almost all types of external or internal damage."
+	name = "repair droid"
+	desc = "Automated repair droid. Scans exosuit for damage and repairs it. Can fix almost any type of external or internal damage."
 	icon_state = "repair_droid"
 	origin_tech = "magnets=3;programming=3"
 	equip_cooldown = 20
@@ -697,7 +702,7 @@
 
 
 /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay
-	name = "Energy Relay"
+	name = "energy relay"
 	desc = "Wirelessly drains energy from any available power channel in area. The performance index is quite low."
 	icon_state = "tesla"
 	origin_tech = "magnets=4;syndicate=2"
@@ -809,7 +814,7 @@
 
 
 /obj/item/mecha_parts/mecha_equipment/generator
-	name = "Phoron Generator"
+	name = "phoron generator"
 	desc = "Generates power using solid phoron as fuel. Pollutes the environment."
 	icon_state = "tesla"
 	origin_tech = "phorontech=2;powerstorage=2;engineering=1"
@@ -947,7 +952,7 @@
 
 
 /obj/item/mecha_parts/mecha_equipment/generator/nuclear
-	name = "ExoNuclear Reactor"
+	name = "\improper ExoNuclear reactor"
 	desc = "Generates power using uranium. Pollutes the environment."
 	icon_state = "tesla"
 	origin_tech = "powerstorage=3;engineering=3"
@@ -984,7 +989,7 @@
 
 //This is pretty much just for the death-ripley so that it is harmless
 /obj/item/mecha_parts/mecha_equipment/tool/safety_clamp
-	name = "KILL CLAMP"
+	name = "\improper KILL CLAMP"
 	icon_state = "mecha_clamp"
 	equip_cooldown = 15
 	energy_drain = 0
